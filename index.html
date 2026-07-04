@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hologram Portfolio - Motion</title>
+  <style>
+    :root{
+      --blue:#3F9CFF;
+      --blue2:#71B8FF;
+      --purple:#B6A7FF;
+      --pink:#FFD7F0;
+      --mint:#DFF8F4;
+      --white:rgba(255,255,255,.66);
+      --line:rgba(255,255,255,.78);
+      --ink:#12131A;
+      --sub:#676775;
+      --shadow:0 28px 90px rgba(92,83,145,.18);
+      --mx:50%;
+      --my:50%;
+    }
+
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif;
+      background:#f8f8fc;
+      overflow-x:hidden;
+    }
+
+    /* 페이지 전체에 은은한 입자감 */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:9998;
+      pointer-events:none;
+      opacity:.16;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode:multiply;
+    }
+
+    /* 마우스를 따라오는 빛 */
+    .cursor-glow{
+      position:fixed;
+      left:0;
+      top:0;
+      width:360px;
+      height:360px;
+      border-radius:50%;
+      transform:translate(-50%,-50%);
+      z-index:9997;
+      pointer-events:none;
+      opacity:.35;
+      background:radial-gradient(circle,rgba(63,156,255,.36) 0%,rgba(182,167,255,.18) 38%,transparent 70%);
+      filter:blur(8px);
+      transition:width .25s ease,height .25s ease,opacity .25s ease;
+    }
+
+    .scroll-progress{
+      position:fixed;
+      left:0;
+      top:0;
+      height:3px;
+      width:0%;
+      z-index:10000;
+      background:linear-gradient(90deg,var(--blue),var(--purple),var(--pink));
+      box-shadow:0 0 22px rgba(63,156,255,.45);
+    }
+
+    .btns{
+      position:fixed;
+      top:20px;
+      left:0;
+      width:100%;
+      z-index:9999;
+      pointer-events:none;
+    }
+    .btns .container{
+      width:min(720px,calc(100% - 36px));
+      margin:0 auto;
+      padding:7px;
+      border:1px solid rgba(255,255,255,.78);
+      border-radius:999px;
+      background:rgba(255,255,255,.43);
+      backdrop-filter:blur(22px) saturate(150%);
+      box-shadow:0 16px 60px rgba(91,85,140,.16);
+      pointer-events:auto;
+    }
+    .btns__menu{display:flex;justify-content:center;gap:7px;}
+    .btn{
+      position:relative;
+      width:126px;
+      height:34px;
+      border:none;
+      border-radius:999px;
+      background:transparent;
+      color:#353541;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.03em;
+      cursor:pointer;
+      transition:transform .25s ease, color .25s ease, background .25s ease, box-shadow .25s ease;
+    }
+    .btn::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:3px;
+      width:0;
+      height:2px;
+      border-radius:99px;
+      background:linear-gradient(90deg,var(--blue),var(--purple));
+      transform:translateX(-50%);
+      transition:width .25s ease;
+    }
+    .btn:hover,.btn.active{
+      color:var(--blue);
+      background:rgba(255,255,255,.88);
+      box-shadow:inset 0 0 0 1px rgba(63,156,255,.14),0 9px 24px rgba(63,156,255,.13);
+    }
+    .btn.active::after{width:42%;}
+
+    section{
+      position:relative;
+      min-height:100vh;
+      padding:118px 26px 82px;
+      overflow:hidden;
+      isolation:isolate;
+    }
+    .wrapper{
+      position:relative;
+      z-index:5;
+      width:min(1180px,100%);
+      margin:0 auto;
+    }
+
+    /* 움직이는 오로라 배경 */
+    .aurora{
+      position:absolute;
+      inset:-18%;
+      z-index:0;
+      background:
+        radial-gradient(circle at calc(var(--mx) - 18%) calc(var(--my) - 16%),rgba(255,215,240,.9) 0 11%,transparent 31%),
+        radial-gradient(circle at calc(var(--mx) + 30%) calc(var(--my) - 28%),rgba(182,167,255,.7) 0 12%,transparent 34%),
+        radial-gradient(circle at calc(var(--mx) + 22%) calc(var(--my) + 35%),rgba(223,248,244,.72) 0 10%,transparent 32%),
+        linear-gradient(130deg,#fff 0%,#fbf7ff 38%,#f6fbff 68%,#fff 100%);
+      animation:auroraMove 11s ease-in-out infinite alternate;
+      filter:saturate(110%);
+    }
+    @keyframes auroraMove{
+      0%{transform:translate3d(-1.6%, -1%, 0) scale(1.02) rotate(0deg);}
+      100%{transform:translate3d(1.4%, 1.2%, 0) scale(1.06) rotate(1deg);}
+    }
+
+    .mountain-layer{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:-1px;
+      height:42%;
+      z-index:2;
+      pointer-events:none;
+      opacity:.9;
+      background:
+        linear-gradient(170deg,transparent 0 28%,rgba(255,255,255,.5) 29% 35%,transparent 36%),
+        linear-gradient(9deg,rgba(229,243,255,.92),rgba(255,240,251,.72) 45%,rgba(255,255,255,.22));
+      clip-path:polygon(0 40%,9% 44%,18% 32%,31% 51%,45% 29%,58% 49%,73% 27%,88% 45%,100% 31%,100% 100%,0 100%);
+      transform:translateY(var(--mountainY,0px));
+    }
+    .scene-lines{
+      position:absolute;
+      inset:0;
+      z-index:3;
+      opacity:.52;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg,transparent 0 16%,rgba(255,255,255,.65) 16% 33%,transparent 33% 100%) 0 31%/100% 9px no-repeat,
+        linear-gradient(90deg,transparent 0 19%,rgba(255,255,255,.42) 19% 46%,transparent 46% 100%) 0 35%/100% 5px no-repeat,
+        linear-gradient(90deg,transparent 0 10%,rgba(255,255,255,.5) 10% 28%,transparent 28% 100%) 0 74%/100% 7px no-repeat,
+        linear-gradient(90deg,transparent 0 25%,rgba(255,255,255,.36) 25% 49%,transparent 49% 100%) 0 78%/100% 4px no-repeat;
+    }
+
+    .orb{
+      position:absolute;
+      z-index:4;
+      border-radius:50%;
+      opacity:.86;
+      background:radial-gradient(circle at 35% 32%,rgba(255,255,255,.92),rgba(209,229,255,.35) 44%,rgba(178,153,255,.13) 72%,transparent 73%);
+      box-shadow:inset -18px -24px 45px rgba(150,165,255,.12),0 20px 55px rgba(170,150,220,.14);
+      animation:float 6s ease-in-out infinite alternate;
+    }
+    .orb.one{width:96px;height:96px;right:8%;top:24%;}
+    .orb.two{width:30px;height:30px;left:18%;bottom:26%;background:radial-gradient(circle,#fff,rgba(255,183,228,.55),transparent 72%);animation-delay:-2s;}
+    .orb.three{width:19px;height:19px;right:18%;bottom:31%;background:radial-gradient(circle,#fff,rgba(63,156,255,.5),transparent 72%);animation-delay:-1s;}
+    @keyframes float{from{transform:translateY(-10px)}to{transform:translateY(16px)}}
+
+    .eyebrow{
+      margin:0 0 12px;
+      color:var(--blue);
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+    h1,h2,h3,p{margin-top:0;}
+    h1{
+      margin:0;
+      color:#14141a;
+      font-size:clamp(44px,8vw,112px);
+      line-height:.88;
+      letter-spacing:-.075em;
+    }
+    h2{
+      margin:0 0 18px;
+      font-size:clamp(30px,4.2vw,64px);
+      line-height:1;
+      letter-spacing:-.055em;
+    }
+    h3{
+      margin:0;
+      color:#5d5d69;
+      font-size:18px;
+      font-weight:400;
+      line-height:1.8;
+      letter-spacing:-.02em;
+    }
+    p{margin:0;color:#54545f;font-size:16px;line-height:1.85;letter-spacing:-.02em;}
+    .blue-text{color:var(--blue);font-weight:900;}
+    .gradient-text{
+      background:linear-gradient(110deg,#15151d 0%,#15151d 32%,var(--blue) 52%,var(--purple) 68%,#15151d 86%);
+      background-size:260% auto;
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      animation:textShine 5.4s ease-in-out infinite;
+    }
+    @keyframes textShine{0%,100%{background-position:0% center}50%{background-position:100% center}}
+
+    .reveal{
+      opacity:0;
+      transform:translateY(54px) scale(.985);
+      filter:blur(12px);
+      transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1), filter .9s cubic-bezier(.2,.7,.2,1);
+    }
+    .reveal.show{
+      opacity:1;
+      transform:translateY(0) scale(1);
+      filter:blur(0);
+    }
+    .delay-1{transition-delay:.12s}.delay-2{transition-delay:.24s}.delay-3{transition-delay:.36s}.delay-4{transition-delay:.48s}
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:54px;
+      align-items:center;
+      min-height:calc(100vh - 210px);
+    }
+    .hero-title{max-width:800px;}
+    .hero-title .thin{display:block;color:#30303a;font-weight:300;letter-spacing:.03em;}
+    .hero-title .bold{display:block;margin-top:8px;font-weight:950;}
+    .hero-copy{margin-top:28px;max-width:600px;}
+    .tag-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:28px;}
+    .tag{
+      padding:8px 13px;
+      border:1px solid rgba(255,255,255,.82);
+      border-radius:999px;
+      background:rgba(255,255,255,.5);
+      color:#4c4b58;
+      font-size:12px;
+      font-weight:800;
+      backdrop-filter:blur(12px);
+      transition:.25s ease;
+    }
+    .tag:hover{transform:translateY(-3px);color:var(--blue);background:rgba(255,255,255,.82);}
+
+    .tilt-card{
+      transform-style:preserve-3d;
+      transition:transform .18s ease, box-shadow .25s ease;
+      will-change:transform;
+    }
+    .tilt-card:hover{box-shadow:0 34px 100px rgba(92,83,145,.22);}
+    .hero-panel{
+      min-height:420px;
+      padding:28px;
+      border:1px solid var(--line);
+      border-radius:34px;
+      background:linear-gradient(145deg,rgba(255,255,255,.64),rgba(255,255,255,.25));
+      backdrop-filter:blur(19px) saturate(145%);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .preview-bar{display:flex;justify-content:space-between;align-items:center;height:26px;padding:0 6px;color:#a4a4b0;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;}
+    .mock-screen{
+      position:relative;
+      height:340px;
+      border-radius:26px;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 70% 35%,rgba(196,185,255,.6),transparent 30%),
+        radial-gradient(circle at 30% 65%,rgba(255,212,239,.82),transparent 34%),
+        linear-gradient(132deg,#fff,#f4f8ff 55%,#fff6fd);
+      border:1px solid rgba(255,255,255,.78);
+    }
+    .mock-screen::before{
+      content:"";position:absolute;left:0;right:0;bottom:0;height:42%;
+      background:linear-gradient(14deg,rgba(211,236,255,.92),rgba(255,234,249,.5));
+      clip-path:polygon(0 43%,14% 31%,30% 48%,48% 26%,64% 46%,82% 24%,100% 40%,100% 100%,0 100%);
+    }
+    .mock-screen::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 46%,transparent 58%);
+      transform:translateX(-35%) rotate(8deg);
+      animation:screenShine 4.2s ease-in-out infinite;
+    }
+    @keyframes screenShine{0%,45%{transform:translateX(-42%) rotate(8deg)}75%,100%{transform:translateX(42%) rotate(8deg)}}
+    .mock-menu{position:absolute;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:7px;padding:6px;border-radius:999px;background:rgba(255,255,255,.54);backdrop-filter:blur(12px);z-index:2;}
+    .mock-menu span{width:54px;height:11px;border-radius:999px;background:rgba(255,255,255,.82);}
+    .mock-card{position:absolute;left:42px;bottom:42px;width:230px;padding:18px;border-radius:22px;background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.75);backdrop-filter:blur(16px);z-index:2;}
+    .mock-card strong{display:block;margin-bottom:8px;font-size:20px;letter-spacing:-.04em;}
+    .mock-card span{display:block;height:7px;margin-top:7px;border-radius:999px;background:rgba(63,156,255,.18);}
+
+    .section-head{display:flex;justify-content:space-between;gap:30px;align-items:flex-end;margin-bottom:50px;}
+    .section-head p{max-width:500px;}
+    .glass-card{border:1px solid var(--line);border-radius:30px;background:var(--white);backdrop-filter:blur(20px) saturate(150%);box-shadow:var(--shadow);}
+    .identity-grid{display:grid;grid-template-columns:1fr .9fr;gap:30px;align-items:stretch;}
+    .identity-main{padding:38px;min-height:430px;}
+    .identity-main h3{margin-top:16px;max-width:680px;}
+    .identity-list{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:42px;}
+    .identity-item{min-height:150px;padding:22px;border-radius:24px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.74);transition:.28s ease;}
+    .identity-item:hover{transform:translateY(-8px);background:rgba(255,255,255,.82);}
+    .identity-icon{width:42px;height:42px;border-radius:50%;margin-bottom:18px;background:radial-gradient(circle at 30% 30%,#fff,rgba(63,156,255,.34),rgba(186,166,255,.18));box-shadow:0 12px 30px rgba(63,156,255,.13);}
+    .identity-item b{display:block;margin-bottom:8px;font-size:17px;}
+    .identity-item small{display:block;color:#6f6f7c;line-height:1.65;}
+    .spectrum-card{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:430px;overflow:hidden;}
+    .spectrum-card::before{content:"";position:absolute;width:250px;height:250px;border-radius:50%;background:conic-gradient(from 120deg,rgba(63,156,255,.66),rgba(255,215,240,.84),rgba(190,182,255,.78),rgba(223,248,244,.72),rgba(63,156,255,.66));filter:blur(.2px);box-shadow:inset 35px 35px 65px rgba(255,255,255,.65),inset -20px -20px 60px rgba(109,92,214,.1),0 25px 80px rgba(176,150,255,.22);animation:spinSoft 9s linear infinite;}
+    .spectrum-card::after{content:"";position:absolute;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.72);backdrop-filter:blur(10px);}
+    @keyframes spinSoft{to{transform:rotate(360deg)}}
+    .spectrum-card .caption{position:absolute;bottom:38px;text-align:center;z-index:3;}
+    .spectrum-card .caption b{display:block;margin-bottom:8px;letter-spacing:.24em;color:#8880d9;font-size:13px;}
+    .spectrum-card .caption span{color:#62626d;font-size:13px;}
+
+    .skills-layout{display:grid;grid-template-columns:.82fr 1.18fr;gap:30px;align-items:start;}
+    .skill-summary{padding:34px;}
+    .skill-summary p{margin-top:20px;}
+    .skill-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+    .skill-card{min-height:290px;padding:28px 24px;border-radius:28px;background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.76);backdrop-filter:blur(20px);box-shadow:var(--shadow);}
+    .skill-card .num{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;margin-bottom:26px;border-radius:50%;color:var(--blue);font-size:12px;font-weight:900;background:rgba(255,255,255,.82);box-shadow:0 10px 26px rgba(63,156,255,.12);}
+    .skill-card h4{margin:0 0 18px;font-size:19px;letter-spacing:-.03em;}
+    .skill-card ul{list-style:none;margin:0;padding:0;}
+    .skill-card li{margin:11px 0;color:#62626d;font-size:14px;line-height:1.5;}
+    .bar{height:7px;margin-top:16px;overflow:hidden;border-radius:999px;background:rgba(63,156,255,.12);}
+    .bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--purple));transform-origin:left;animation:barGrow 1.25s ease both;}
+    @keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+    .archive-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+    .work-card{min-height:315px;padding:16px;border-radius:28px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.78);box-shadow:var(--shadow);backdrop-filter:blur(20px);}
+    .thumb{position:relative;height:178px;border-radius:22px;overflow:hidden;background:linear-gradient(135deg,#fff,#f4f8ff,#fff2fb);border:1px solid rgba(255,255,255,.8);}
+    .thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 24% 25%,rgba(255,215,240,.9),transparent 26%),radial-gradient(circle at 72% 35%,rgba(190,182,255,.75),transparent 26%),linear-gradient(11deg,transparent 48%,rgba(255,255,255,.7) 49% 52%,transparent 53%);}
+    .thumb::after{content:"";position:absolute;left:18px;right:18px;bottom:18px;height:58px;border-radius:17px;background:rgba(255,255,255,.56);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);}
+    .work-card small{display:block;margin:18px 0 8px;color:var(--blue);font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;}
+    .work-card b{display:block;margin-bottom:10px;font-size:18px;letter-spacing:-.035em;}
+    .work-card p{font-size:13px;line-height:1.65;color:#696976;}
+    .contact-box{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;padding:42px;margin-top:38px;border-radius:32px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.76);box-shadow:var(--shadow);backdrop-filter:blur(20px);}
+    .contact-box a{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:50px;border-radius:999px;color:white;text-decoration:none;font-size:14px;font-weight:900;background:linear-gradient(135deg,var(--blue),#8bb8ff 55%,var(--purple));box-shadow:0 18px 38px rgba(63,156,255,.22);transition:.28s ease;}
+    .contact-box a:hover{transform:translateY(-4px);box-shadow:0 24px 46px rgba(63,156,255,.28);}
+
+
+
+    /* 스크롤 내릴 때 추가되는 장면 전환 효과 */
+    .btns{
+      transition:transform .28s ease, opacity .28s ease;
+    }
+    body.scrolling-down .btns{
+      transform:translateY(-9px) scale(.985);
+      opacity:.76;
+    }
+    section .wrapper{
+      will-change:transform, opacity;
+      transform-origin:center center;
+    }
+    .scroll-mask{
+      position:absolute;
+      inset:-8%;
+      z-index:4;
+      pointer-events:none;
+      opacity:0;
+      transform:translateY(100%) rotate(-3deg);
+      background:linear-gradient(110deg,
+        transparent 0%,
+        rgba(255,255,255,.72) 38%,
+        rgba(63,156,255,.14) 48%,
+        rgba(182,167,255,.16) 56%,
+        transparent 70%);
+      filter:blur(2px);
+      mix-blend-mode:screen;
+    }
+    section.is-active .scroll-mask{
+      animation:scrollWipe 1.15s cubic-bezier(.2,.7,.2,1) forwards;
+    }
+    @keyframes scrollWipe{
+      0%{opacity:0;transform:translateY(100%) rotate(-3deg);}
+      35%{opacity:.72;}
+      100%{opacity:0;transform:translateY(-100%) rotate(-3deg);}
+    }
+    section{
+      --focus:0;
+    }
+    section::selection{
+      background:rgba(63,156,255,.25);
+    }
+    .scroll-hint{
+      position:absolute;
+      left:50%;
+      bottom:34px;
+      z-index:7;
+      transform:translateX(-50%);
+      color:rgba(50,50,62,.42);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      animation:hintMove 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes hintMove{
+      from{transform:translate(-50%,0);opacity:.35;}
+      to{transform:translate(-50%,10px);opacity:.75;}
+    }
+
+    @media(max-width:980px){
+      .hero,.identity-grid,.skills-layout{grid-template-columns:1fr;}
+      .skill-cards,.archive-grid{grid-template-columns:repeat(2,1fr);}
+      .identity-list{grid-template-columns:1fr;}
+      .section-head{display:block;}
+      .section-head p{margin-top:18px;}
+    }
+    @media(max-width:640px){
+      .cursor-glow{display:none;}
+      section{padding:104px 18px 66px;}
+      .btns{top:12px;}
+      .btns__menu{overflow-x:auto;justify-content:flex-start;padding-bottom:2px;}
+      .btn{min-width:96px;width:96px;font-size:11px;}
+      .hero-panel{min-height:330px;padding:18px;}
+      .mock-screen{height:270px;}
+      .mock-card{left:22px;right:22px;width:auto;}
+      .skill-cards,.archive-grid{grid-template-columns:1fr;}
+      .contact-box{grid-template-columns:1fr;padding:28px;}
+      .contact-box a{width:100%;}
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress"></div>
+  <div class="cursor-glow"></div>
+
+  <div class="btns">
+    <div class="container">
+      <div class="btns__menu">
+        <button class="btn home active" type="button">Prologue</button>
+        <button class="btn AAbout" type="button">Identity</button>
+        <button class="btn skills" type="button">Skills</button>
+        <button class="btn work" type="button">Archive</button>
+        <button class="btn contact" type="button">Contact</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="home">
+    <div class="aurora"></div><div class="mountain-layer"></div><div class="scene-lines"></div>
+    <div class="orb one"></div><div class="orb two"></div><div class="orb three"></div>
+    <div class="wrapper hero">
+      <div class="hero-title reveal show">
+        <p class="eyebrow">Personal Web Portfolio</p>
+        <h1><span class="thin">HELLO, THIS IS ME</span><span class="bold gradient-text">Welcome to My World</span></h1>
+        <h3 class="hero-copy">새로운 시선으로 감각을 구조화하고, 빛과 색의 변화처럼 유연하게 성장하는 디자이너의 포트폴리오입니다.</h3>
+        <div class="tag-row">
+          <span class="tag">Light</span><span class="tag">Hologram</span><span class="tag">Emotion</span><span class="tag">Archive</span><span class="tag">Growth</span>
+        </div>
+      </div>
+      <div class="hero-panel tilt-card reveal show delay-1">
+        <div class="preview-bar"><span>Desktop - 1</span><span>Motion Scene</span></div>
+        <div class="mock-screen">
+          <div class="mock-menu"><span></span><span></span><span></span><span></span></div>
+          <div class="mock-card">
+            <strong>Prologue</strong>
+            <p>스크롤 리빌, 빛 번짐, 유리 카드, 부드러운 장면 전환.</p>
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="About">
+    <div class="aurora"></div><div class="mountain-layer"></div><div class="scene-lines"></div>
+    <div class="orb one"></div><div class="orb two"></div>
+    <div class="wrapper">
+      <div class="section-head reveal">
+        <div><p class="eyebrow">Identity</p><h2>A Hologram of Me</h2></div>
+        <p>하나의 색으로 고정되지 않고, 빛의 각도에 따라 다른 인상을 만드는 홀로그램처럼 다양한 감각과 관점을 디자인으로 변환합니다.</p>
+      </div>
+      <div class="identity-grid">
+        <div class="glass-card identity-main tilt-card reveal delay-1">
+          <p class="blue-text">스크롤하면 아래에서 위로 등장 + 블러가 풀리는 효과</p>
+          <h3>저는 감정과 기능 사이의 균형을 찾고, 이미지·타이포그래피·3D 요소를 조합해 시각적으로 설득력 있는 결과물을 만듭니다.</h3>
+          <div class="identity-list">
+            <div class="identity-item"><div class="identity-icon"></div><b>Light</b><small>시선이 머무는 하이라이트와 투명한 공간감을 설계합니다.</small></div>
+            <div class="identity-item"><div class="identity-icon"></div><b>Hologram</b><small>보라, 핑크, 블루 계열의 변화감으로 개성을 표현합니다.</small></div>
+            <div class="identity-item"><div class="identity-icon"></div><b>Mountain</b><small>차분한 배경 레이어로 페이지의 깊이와 여백을 만듭니다.</small></div>
+          </div>
+        </div>
+        <div class="glass-card spectrum-card tilt-card reveal delay-2"><div class="caption"><b>MY SPECTRUM</b><span>Observe · Create · Grow</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <div class="aurora"></div><div class="mountain-layer"></div><div class="scene-lines"></div>
+    <div class="orb one"></div><div class="orb three"></div>
+    <div class="wrapper">
+      <div class="section-head reveal">
+        <div><p class="eyebrow">Skills</p><h2>감각을 구조화하고,<br />제품을 설계하는 기술</h2></div>
+        <p>평면 그래픽부터 UI, 3D 시각화까지 작업 목적에 맞는 툴과 표현 방식을 선택해 결과물의 완성도를 높입니다.</p>
+      </div>
+      <div class="skills-layout">
+        <div class="glass-card skill-summary tilt-card reveal delay-1">
+          <p class="blue-text">마우스 오버 시 카드가 기울어지고, 스크롤 시 천천히 나타나는 효과</p>
+          <p>핵심은 예쁜 장식보다 정보의 위계입니다. 타이포그래피, 색상, 여백, 이미지 흐름을 조절해 사용자가 자연스럽게 읽도록 만듭니다.</p>
+          <div class="bar"><span style="width:88%"></span></div><div class="bar"><span style="width:76%"></span></div><div class="bar"><span style="width:82%"></span></div>
+        </div>
+        <div class="skill-cards">
+          <div class="skill-card tilt-card reveal delay-1"><span class="num">01</span><h4>Design Foundation</h4><ul><li>Typography</li><li>Layout System</li><li>Color & Moodboard</li><li>Brand Direction</li></ul></div>
+          <div class="skill-card tilt-card reveal delay-2"><span class="num">02</span><h4>Digital Art</h4><ul><li>Photoshop / Illustrator</li><li>Figma UI Draft</li><li>3ds Max / Maya</li><li>Substance / ZBrush</li></ul></div>
+          <div class="skill-card tilt-card reveal delay-3"><span class="num">03</span><h4>Creative Process</h4><ul><li>Research Insight</li><li>Concept Visualizing</li><li>Prototype</li><li>Presentation Design</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="aurora"></div><div class="mountain-layer"></div><div class="scene-lines"></div>
+    <div class="orb two"></div><div class="orb three"></div>
+    <div class="wrapper">
+      <div class="section-head reveal">
+        <div><p class="eyebrow">Archive</p><h2>Selected Works</h2></div>
+        <p>작업물은 같은 톤의 카드 안에 정리해 전체 웹페이지의 분위기를 유지합니다. 썸네일 이미지를 넣으면 실제 포트폴리오 카드로 바로 사용할 수 있습니다.</p>
+      </div>
+      <div class="archive-grid">
+        <article class="work-card tilt-card reveal delay-1"><div class="thumb"></div><small>Branding</small><b>Hologram Identity</b><p>빛, 보라, 투명도를 이용한 개인 브랜딩 시각화.</p></article>
+        <article class="work-card tilt-card reveal delay-2"><div class="thumb"></div><small>Editorial</small><b>Typography Poster</b><p>A3 흑백 타이포그래피와 정보 위계 설계.</p></article>
+        <article class="work-card tilt-card reveal delay-3"><div class="thumb"></div><small>Product</small><b>Renewal Concept</b><p>사용자 불편을 바탕으로 한 제품 리뉴얼 제안.</p></article>
+        <article class="work-card tilt-card reveal delay-4"><div class="thumb"></div><small>UI Visual</small><b>App Color System</b><p>#3F9CFF를 중심으로 정리한 산뜻한 UI 톤.</p></article>
+      </div>
+      <div class="contact-box reveal delay-2" id="contact">
+        <div><p class="eyebrow">Contact</p><h2>Let’s make a clear visual story.</h2><p>포트폴리오의 마지막은 간단한 연락 섹션으로 마무리합니다.</p></div>
+        <a href="mailto:yourmail@example.com">Contact Me</a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const cursorGlow = document.querySelector('.cursor-glow');
+    const progress = document.querySelector('.scroll-progress');
+
+    // 마우스 빛 효과 + 배경 오로라 좌표 연결
+    window.addEventListener('mousemove', (e) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      cursorGlow.style.left = x + 'px';
+      cursorGlow.style.top = y + 'px';
+      document.documentElement.style.setProperty('--mx', (x / window.innerWidth * 100).toFixed(2) + '%');
+      document.documentElement.style.setProperty('--my', (y / window.innerHeight * 100).toFixed(2) + '%');
+    });
+
+    // 스크롤 진행 바 + 산 레이어 패럴랙스
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY;
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.width = (scrollTop / docH * 100) + '%';
+      document.documentElement.style.setProperty('--mountainY', Math.min(scrollTop * .035, 34) + 'px');
+    });
+
+    const menuItems = [
+      { btn: document.querySelector('.home'), section: document.querySelector('#home') },
+      { btn: document.querySelector('.AAbout'), section: document.querySelector('#About') },
+      { btn: document.querySelector('.skills'), section: document.querySelector('#skills') },
+      { btn: document.querySelector('.work'), section: document.querySelector('#work') },
+      { btn: document.querySelector('.contact'), section: document.querySelector('#contact') }
+    ];
+
+    menuItems.forEach((item) => {
+      item.btn.addEventListener('click', () => item.section.scrollIntoView({ behavior:'smooth', block:'start' }));
+    });
+
+    // 스크롤 리빌 + 현재 메뉴 활성화
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if(entry.isIntersecting) entry.target.classList.add('show');
+      });
+    }, { threshold:.18 });
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if(entry.isIntersecting){
+          menuItems.forEach((item) => item.btn.classList.remove('active'));
+          const active = menuItems.find((item) => item.section === entry.target || entry.target.contains(item.section));
+          const exact = menuItems.find((item) => item.section === entry.target);
+          if(exact) exact.btn.classList.add('active');
+          if(entry.target.id === 'work') document.querySelector('.work').classList.add('active');
+        }
+      });
+    }, { threshold:.42 });
+    ['#home','#About','#skills','#work'].forEach((selector) => sectionObserver.observe(document.querySelector(selector)));
+
+    // 카드 3D 틸트 효과
+    document.querySelectorAll('.tilt-card').forEach((card) => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - .5;
+        const py = (e.clientY - rect.top) / rect.height - .5;
+        card.style.transform = `perspective(900px) rotateX(${py * -5}deg) rotateY(${px * 6}deg) translateY(-5px)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+      });
+    });
+
+    // 메뉴 버튼 magnetic 느낌
+    document.querySelectorAll('.btn').forEach((btn) => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * .08}px, ${y * .16}px)`;
+      });
+      btn.addEventListener('mouseleave', () => btn.style.transform = 'translate(0,0)');
+    });
+
+
+    // ===== 추가 스크롤 효과: 섹션 줌/페이드 + 빛이 지나가는 전환 =====
+    document.querySelectorAll('section').forEach((section, index) => {
+      if(!section.querySelector('.scroll-mask')){
+        const mask = document.createElement('div');
+        mask.className = 'scroll-mask';
+        section.appendChild(mask);
+      }
+      if(index === 0 && !section.querySelector('.scroll-hint')){
+        const hint = document.createElement('div');
+        hint.className = 'scroll-hint';
+        hint.textContent = 'Scroll Down';
+        section.appendChild(hint);
+      }
+    });
+
+    let lastScrollY = window.scrollY;
+    let scrollTicking = false;
+
+    function applyScrollMotion(){
+      const currentY = window.scrollY;
+      document.body.classList.toggle('scrolling-down', currentY > lastScrollY && currentY > 80);
+      lastScrollY = currentY;
+
+      document.querySelectorAll('section').forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const sectionCenter = rect.top + rect.height / 2;
+        const viewportCenter = window.innerHeight / 2;
+        const distance = Math.abs(sectionCenter - viewportCenter);
+        const focus = Math.max(0, Math.min(1, 1 - distance / (window.innerHeight * .88)));
+
+        section.style.setProperty('--focus', focus.toFixed(3));
+        section.classList.toggle('is-active', focus > .72);
+
+        const wrapper = section.querySelector('.wrapper');
+        if(wrapper){
+          const moveY = (1 - focus) * 34;
+          const scale = .97 + focus * .03;
+          const opacity = .55 + focus * .45;
+          wrapper.style.transform = `translate3d(0, ${moveY}px, 0) scale(${scale})`;
+          wrapper.style.opacity = opacity.toFixed(3);
+        }
+
+        const aurora = section.querySelector('.aurora');
+        if(aurora){
+          aurora.style.opacity = (.68 + focus * .32).toFixed(3);
+          aurora.style.transform = `translate3d(0, ${-rect.top * .025}px, 0) scale(${1 + focus * .025})`;
+        }
+      });
+
+      scrollTicking = false;
+    }
+
+    function requestScrollMotion(){
+      if(!scrollTicking){
+        requestAnimationFrame(applyScrollMotion);
+        scrollTicking = true;
+      }
+    }
+
+    window.addEventListener('scroll', requestScrollMotion, { passive:true });
+    window.addEventListener('resize', requestScrollMotion);
+    applyScrollMotion();
+
+  </script>
+</body>
+</html>
